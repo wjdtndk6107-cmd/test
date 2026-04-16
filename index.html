@@ -1,12 +1,540 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>내 랜딩 페이지</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>댓글 섹션</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────── */
+    :root {
+      --bg:         #0e0e0f;
+      --surface:    #17171a;
+      --surface-2:  #1f1f24;
+      --border:     rgba(255,255,255,0.07);
+      --accent:     #c8a97e;
+      --accent-dim: rgba(200,169,126,0.15);
+      --text-1:     #f0ece6;
+      --text-2:     #9a9490;
+      --text-3:     #5a5754;
+      --danger:     #e07070;
+      --radius:     12px;
+      --font-serif: 'Noto Serif KR', serif;
+      --font-sans:  'Noto Sans KR', sans-serif;
+      --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ─── Reset ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 64px 16px;
+    }
+
+    /* ─── Layout ─────────────────────────────────────── */
+    .comments-wrapper {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    /* ─── Section Header ─────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.02em;
+    }
+    .section-count {
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid var(--accent);
+      padding: 2px 8px;
+      border-radius: 20px;
+      transition: opacity var(--transition);
+    }
+
+    /* ─── Form ───────────────────────────────────────── */
+    .comment-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .comment-form::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+    }
+
+    .form-row {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    input[type="text"],
+    textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-1);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 300;
+      padding: 12px 14px;
+      width: 100%;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+      resize: none;
+    }
+    input[type="text"]::placeholder,
+    textarea::placeholder { color: var(--text-3); }
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    textarea { min-height: 100px; line-height: 1.6; }
+
+    .form-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      transition: color var(--transition);
+    }
+    .char-count.warn { color: var(--danger); }
+
+    .btn-submit {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #0e0e0f;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 10px 24px;
+      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+      white-space: nowrap;
+    }
+    .btn-submit:hover:not(:disabled) {
+      opacity: 0.88;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(200,169,126,0.25);
+    }
+    .btn-submit:active:not(:disabled) { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── Status Messages ────────────────────────────── */
+    .status-msg {
+      font-size: 0.82rem;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 12px;
+      display: none;
+    }
+    .status-msg.success {
+      background: rgba(120,200,140,0.1);
+      border: 1px solid rgba(120,200,140,0.25);
+      color: #88c898;
+      display: block;
+    }
+    .status-msg.error {
+      background: rgba(224,112,112,0.1);
+      border: 1px solid rgba(224,112,112,0.25);
+      color: var(--danger);
+      display: block;
+    }
+
+    /* ─── Divider ────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider-label {
+      font-size: 0.72rem;
+      color: var(--text-3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ─── Comment Cards ──────────────────────────────── */
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .comment-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      transition: border-color var(--transition);
+      animation: fadeSlideIn 0.35s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    .comment-card:hover { border-color: rgba(255,255,255,0.12); }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .comment-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      border: 1px solid rgba(200,169,126,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .comment-nickname {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-1);
+    }
+    .comment-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--text-3);
+    }
+    .comment-time {
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+    .comment-body {
+      font-size: 0.9rem;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--text-2);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ─── Empty / Loading States ─────────────────────── */
+    .state-box {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-3);
+    }
+    .state-box .icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    .state-box p { font-size: 0.88rem; }
+
+    .skeleton-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+    }
+    .skeleton-line {
+      height: 12px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--surface-2) 25%, #2a2a2f 50%, var(--surface-2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .skeleton-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); animation: shimmer 1.4s infinite; background-size: 200% 100%; background-image: linear-gradient(90deg, var(--surface-2) 25%, #2a2a2f 50%, var(--surface-2) 75%); flex-shrink: 0; }
+
+    /* ─── Responsive ─────────────────────────────────── */
+    @media (max-width: 480px) {
+      .section-title { font-size: 1.3rem; }
+      .comment-form { padding: 18px; }
+      .btn-submit { padding: 10px 18px; }
+    }
+  </style>
 </head>
 <body>
-  <h1>안녕하세요! 저의 첫 번째 웹페이지입니다.</h1>
-  <p>이 페이지는 곧 멋진 서비스가 될 예정입니다.</p>
+
+<section class="comments-wrapper" id="comments">
+
+  <!-- Section Header -->
+  <div class="section-header">
+    <h2 class="section-title">댓글</h2>
+    <span class="section-count" id="commentCount">— 개</span>
+  </div>
+
+  <!-- Write Form -->
+  <div class="comment-form">
+    <div class="form-row">
+      <div class="field">
+        <label for="nickname">닉네임</label>
+        <input type="text" id="nickname" placeholder="익명의 독자" maxlength="20" autocomplete="off" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label for="content">댓글</label>
+        <textarea id="content" placeholder="생각을 자유롭게 남겨주세요..." maxlength="500"></textarea>
+      </div>
+    </div>
+    <div class="form-footer">
+      <span class="char-count" id="charCount">0 / 500</span>
+      <button class="btn-submit" id="submitBtn" disabled>등록하기</button>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <!-- Divider -->
+  <div class="divider">
+    <div class="divider-line"></div>
+    <span class="divider-label" id="dividerLabel">댓글 불러오는 중</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- Comments List -->
+  <div class="comments-list" id="commentsList"></div>
+
+</section>
+
+<!-- ─── Supabase JS (CDN) ─────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* ── Config ──────────────────────────────────────────── */
+const SUPABASE_URL  = 'https://kqztsrdnydliaeklkmfr.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxenRzcmRueWRsaWFla2xrbWZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjMzNjQ0MiwiZXhwIjoyMDkxOTEyNDQyfQ.hdq6qpQN11sx64MaCi6v9htBYscvhEfTVnZgbKmNJME';
+const TABLE         = 'comments';
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ── DOM Refs ────────────────────────────────────────── */
+const nicknameEl    = document.getElementById('nickname');
+const contentEl     = document.getElementById('content');
+const submitBtn     = document.getElementById('submitBtn');
+const charCountEl   = document.getElementById('charCount');
+const statusMsg     = document.getElementById('statusMsg');
+const commentsList  = document.getElementById('commentsList');
+const commentCount  = document.getElementById('commentCount');
+const dividerLabel  = document.getElementById('dividerLabel');
+
+/* ── Helpers ─────────────────────────────────────────── */
+function showStatus(msg, type) {
+  statusMsg.textContent  = msg;
+  statusMsg.className    = `status-msg ${type}`;
+  if (type === 'success') setTimeout(() => { statusMsg.className = 'status-msg'; }, 3000);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60)    return '방금 전';
+  if (diff < 3600)  return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function avatarLetter(nickname) {
+  return nickname ? nickname.trim()[0].toUpperCase() : '?';
+}
+
+function renderSkeleton() {
+  commentsList.innerHTML = [1,2,3].map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-meta">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-line" style="width:90px;"></div>
+        <div class="skeleton-line" style="width:60px;"></div>
+      </div>
+      <div class="skeleton-line" style="width:100%;margin-bottom:8px;"></div>
+      <div class="skeleton-line" style="width:72%;"></div>
+    </div>
+  `).join('');
+}
+
+function renderEmpty() {
+  commentsList.innerHTML = `
+    <div class="state-box">
+      <div class="icon">💬</div>
+      <p>아직 댓글이 없습니다.<br>첫 번째 댓글을 남겨보세요!</p>
+    </div>`;
+  dividerLabel.textContent = '댓글 0개';
+}
+
+function renderError() {
+  commentsList.innerHTML = `
+    <div class="state-box">
+      <div class="icon">⚠️</div>
+      <p>댓글을 불러오지 못했습니다.<br>잠시 후 다시 시도해 주세요.</p>
+    </div>`;
+}
+
+function renderComments(comments) {
+  if (!comments.length) { renderEmpty(); return; }
+
+  commentCount.textContent  = `${comments.length}개`;
+  dividerLabel.textContent  = `댓글 ${comments.length}개`;
+
+  commentsList.innerHTML = comments.map((c, i) => `
+    <div class="comment-card" style="animation-delay:${i * 0.05}s">
+      <div class="comment-meta">
+        <div class="comment-avatar">${avatarLetter(c.nickname)}</div>
+        <span class="comment-nickname">${escHtml(c.nickname || '익명')}</span>
+        <div class="comment-dot"></div>
+        <span class="comment-time">${formatDate(c.created_at)}</span>
+      </div>
+      <p class="comment-body">${escHtml(c.content)}</p>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ── Fetch Comments ──────────────────────────────────── */
+async function loadComments() {
+  renderSkeleton();
+  dividerLabel.textContent = '불러오는 중…';
+
+  const { data, error } = await client
+    .from(TABLE)
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); renderError(); return; }
+  renderComments(data || []);
+}
+
+/* ── Submit Comment ──────────────────────────────────── */
+async function submitComment() {
+  const nickname = nicknameEl.value.trim() || '익명';
+  const content  = contentEl.value.trim();
+  if (!content) return;
+
+  submitBtn.disabled    = true;
+  submitBtn.textContent = '등록 중…';
+  statusMsg.className   = 'status-msg';
+
+  const { error } = await client
+    .from(TABLE)
+    .insert([{ nickname, content }]);
+
+  submitBtn.textContent = '등록하기';
+
+  if (error) {
+    console.error(error);
+    showStatus('댓글 등록에 실패했습니다. 다시 시도해 주세요.', 'error');
+    submitBtn.disabled = false;
+    return;
+  }
+
+  showStatus('댓글이 등록되었습니다 ✓', 'success');
+  contentEl.value  = '';
+  charCountEl.textContent = '0 / 500';
+  submitBtn.disabled = true;
+  await loadComments();
+}
+
+/* ── Input Validation ────────────────────────────────── */
+function updateSubmitState() {
+  const len    = contentEl.value.length;
+  const hasContent = contentEl.value.trim().length > 0;
+  charCountEl.textContent = `${len} / 500`;
+  charCountEl.className   = len > 450 ? 'char-count warn' : 'char-count';
+  submitBtn.disabled      = !hasContent;
+}
+
+contentEl.addEventListener('input', updateSubmitState);
+
+submitBtn.addEventListener('click', submitComment);
+
+contentEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitComment();
+});
+
+/* ── Real-time subscription ──────────────────────────── */
+client
+  .channel('comments-channel')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE }, () => {
+    loadComments();
+  })
+  .subscribe();
+
+/* ── Init ────────────────────────────────────────────── */
+loadComments();
+</script>
+
 </body>
 </html>
